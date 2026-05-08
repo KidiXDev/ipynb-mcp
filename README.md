@@ -35,6 +35,26 @@ go run .
 
 The server uses stdio transport.
 
+## Install
+
+Build a local binary:
+
+```bash
+go build -o ipynb-mcp .
+```
+
+Then configure your AI client to run the binary as an MCP stdio server.
+
+Prebuilt binaries are also published in GitHub Releases for:
+
+- Windows (`amd64`, `arm64`)
+- Linux (`amd64`, `arm64`)
+- macOS / Darwin (`amd64`, `arm64`)
+
+See full per-client setup:
+
+- `docs/AI_TOOLS_SETUP.md`
+
 ## Example MCP Config (Local)
 
 ```json
@@ -55,7 +75,7 @@ You can also use a built binary:
 {
   "mcpServers": {
     "ipynb": {
-      "command": "/path/to/ipynb-mcp/ipynb-mcp.exe"
+      "command": "/path/to/ipynb-mcp/ipynb-mcp"
     }
   }
 }
