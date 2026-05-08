@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ipynb": {
+      "command": "go",
+      "args": ["run", "."],
+      "cwd": "/path/to/ipynb-mcp"
+    }
+  }
+}
