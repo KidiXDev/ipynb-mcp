@@ -1,6 +1,6 @@
 # ipynb-mcp Installation Guide for AI Tools
 
-Last updated: 2026-05-08
+Last updated: 2026-05-09
 
 This guide shows how to install and configure this MCP server (`ipynb-mcp`) in common AI coding tools.
 
@@ -153,7 +153,7 @@ From the Agent pane:
 }
 ```
 
-### Optional: VS Code Copilot (Agent mode)
+### GitHub Copilot
 
 Workspace-level `.vscode/mcp.json`:
 
@@ -184,6 +184,8 @@ If connected correctly, you should see tools like:
 - `update_code_cell`
 - `delete_cell`
 - `read_cell_output`
+
+Tool arguments and behavior (single vs batch modes, `create_notebook` inputs, etc.) are documented in [README.md](../README.md).
 
 ## Notes
 

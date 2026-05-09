@@ -17,9 +17,22 @@ func RegisterCreateNotebook(s *server.MCPServer) {
 			mcp.Required(),
 			mcp.Description("Path where the new .ipynb file should be created."),
 		),
-		mcp.WithString(
-			"title",
-			mcp.Description("Optional notebook title. When present, a first markdown cell '# {title}' is created."),
+		mcp.WithArray(
+			"cells",
+			mcp.Description("Optional initial cells. Each item requires cell_type ('markdown' or 'code') and source."),
+			mcp.Items(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"cell_type": map[string]any{
+						"type": "string",
+						"enum": []string{notebook.CellTypeMarkdown, notebook.CellTypeCode},
+					},
+					"source": map[string]any{
+						"type": "string",
+					},
+				},
+				"required": []string{"cell_type", "source"},
+			}),
 		),
 	)
 
@@ -28,9 +41,15 @@ func RegisterCreateNotebook(s *server.MCPServer) {
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		title := req.GetString("title", "")
+		if _, hasTitle := req.GetArguments()["title"]; hasTitle {
+			return mcp.NewToolResultError("title is not supported; provide all content using cells"), nil
+		}
+		initialCells, err := parseCreateNotebookInitialCells(req)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 
-		nb, err := notebook.CreateNotebook(path, title)
+		nb, err := notebook.CreateNotebookWithCells(path, initialCells)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}

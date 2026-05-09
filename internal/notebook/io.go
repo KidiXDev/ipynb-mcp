@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+type InitialCell struct {
+	CellType string
+	Source   string
+}
+
 func ReadNotebook(path string) (*Notebook, error) {
 	if err := ValidateNotebookPath(path); err != nil {
 		return nil, err
@@ -34,15 +39,13 @@ func ReadNotebook(path string) (*Notebook, error) {
 	return &nb, nil
 }
 
-func CreateNotebook(path string, title string) (*Notebook, error) {
+func CreateNotebook(path string) (*Notebook, error) {
+	return CreateNotebookWithCells(path, nil)
+}
+
+func CreateNotebookWithCells(path string, initialCells []InitialCell) (*Notebook, error) {
 	if err := ValidateNotebookPath(path); err != nil {
 		return nil, err
-	}
-
-	if _, err := os.Stat(path); err == nil {
-		return nil, fmt.Errorf("notebook already exists: %s", path)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("check notebook path: %w", err)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -56,13 +59,40 @@ func CreateNotebook(path string, title string) (*Notebook, error) {
 		NBFormatMinor: 5,
 	}
 
-	if strings.TrimSpace(title) != "" {
-		nb.Cells = append(nb.Cells, NewMarkdownCell("# "+title, nil))
+	for i, cell := range initialCells {
+		switch cell.CellType {
+		case CellTypeMarkdown:
+			nb.Cells = append(nb.Cells, NewMarkdownCell(cell.Source, nil))
+		case CellTypeCode:
+			nb.Cells = append(nb.Cells, NewCodeCell(cell.Source, nil))
+		default:
+			return nil, fmt.Errorf("initial cell %d has unsupported cell_type %q", i, cell.CellType)
+		}
 	}
 
-	if err := WriteNotebook(path, nb); err != nil {
+	payload, err := marshalNotebookPayload(nb)
+	if err != nil {
 		return nil, err
 	}
+
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	if err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return nil, fmt.Errorf("notebook already exists: %s", path)
+		}
+		return nil, fmt.Errorf("create notebook file: %w", err)
+	}
+
+	if _, err := f.Write(payload); err != nil {
+		_ = f.Close()
+		_ = os.Remove(path)
+		return nil, fmt.Errorf("write notebook file: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(path)
+		return nil, fmt.Errorf("close notebook file: %w", err)
+	}
+
 	return nb, nil
 }
 
@@ -77,17 +107,24 @@ func WriteNotebook(path string, nb *Notebook) error {
 		nb.Metadata = map[string]any{}
 	}
 
-	payload, err := json.MarshalIndent(nb, "", "  ")
+	payload, err := marshalNotebookPayload(nb)
 	if err != nil {
-		return fmt.Errorf("marshal notebook: %w", err)
+		return err
 	}
-	payload = append(payload, '\n')
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("ensure parent directories: %w", err)
 	}
 
 	return writeFileAtomically(path, payload)
+}
+
+func marshalNotebookPayload(nb *Notebook) ([]byte, error) {
+	payload, err := json.MarshalIndent(nb, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal notebook: %w", err)
+	}
+	return append(payload, '\n'), nil
 }
 
 func ValidateNotebookPath(path string) error {
