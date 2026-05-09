@@ -56,13 +56,13 @@ func TestReadNotebookParsesStringAndSliceSources(t *testing.T) {
 	}
 }
 
-func TestCreateNotebookWithTitle(t *testing.T) {
+func TestCreateNotebookEmpty(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	path := filepath.Join(dir, "new", "title.ipynb")
+	path := filepath.Join(dir, "new", "empty.ipynb")
 
-	nb, err := CreateNotebook(path, "Demo Title")
+	nb, err := CreateNotebook(path)
 	if err != nil {
 		t.Fatalf("create notebook: %v", err)
 	}
@@ -73,19 +73,55 @@ func TestCreateNotebookWithTitle(t *testing.T) {
 	if got, want := nb.NBFormatMinor, 5; got != want {
 		t.Fatalf("nbformat_minor: got %d want %d", got, want)
 	}
-	if got, want := len(nb.Cells), 1; got != want {
+	if got, want := len(nb.Cells), 0; got != want {
 		t.Fatalf("cells length: got %d want %d", got, want)
-	}
-	if got, want := nb.Cells[0].Source.String(), "# Demo Title"; got != want {
-		t.Fatalf("title cell: got %q want %q", got, want)
 	}
 
 	reloaded, err := ReadNotebook(path)
 	if err != nil {
 		t.Fatalf("reload notebook: %v", err)
 	}
-	if got, want := reloaded.Cells[0].CellType, CellTypeMarkdown; got != want {
-		t.Fatalf("reloaded title cell type: got %q want %q", got, want)
+	if got, want := len(reloaded.Cells), 0; got != want {
+		t.Fatalf("reloaded cells length: got %d want %d", got, want)
+	}
+}
+
+func TestCreateNotebookWithInitialCells(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "new", "with-cells.ipynb")
+
+	nb, err := CreateNotebookWithCells(path, []InitialCell{
+		{CellType: CellTypeMarkdown, Source: "## Section\n"},
+		{CellType: CellTypeCode, Source: "x = 1\n"},
+	})
+	if err != nil {
+		t.Fatalf("create notebook: %v", err)
+	}
+
+	if got, want := len(nb.Cells), 2; got != want {
+		t.Fatalf("cells length: got %d want %d", got, want)
+	}
+	if got, want := nb.Cells[0].CellType, CellTypeMarkdown; got != want {
+		t.Fatalf("first cell type: got %q want %q", got, want)
+	}
+	if got, want := nb.Cells[1].CellType, CellTypeCode; got != want {
+		t.Fatalf("second cell type: got %q want %q", got, want)
+	}
+}
+
+func TestCreateNotebookWithInitialCellsRejectsInvalidCellType(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "new", "invalid-cell-type.ipynb")
+
+	_, err := CreateNotebookWithCells(path, []InitialCell{
+		{CellType: "raw", Source: "x"},
+	})
+	if err == nil {
+		t.Fatalf("expected error for unsupported initial cell type")
 	}
 }
 
@@ -204,6 +240,37 @@ func TestValidationErrors(t *testing.T) {
 
 	nb := &Notebook{}
 	err := DeleteCell(nb, 0)
+	if err == nil {
+		t.Fatalf("expected out-of-range error")
+	}
+	if !strings.Contains(err.Error(), "out of range") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestInsertIntoEmptyNotebook(t *testing.T) {
+	t.Parallel()
+
+	nb := &Notebook{Cells: []Cell{}}
+
+	if err := InsertMarkdownCell(nb, 0, "# Intro\n"); err != nil {
+		t.Fatalf("insert markdown into empty notebook: %v", err)
+	}
+	if err := InsertCodeCell(nb, 1, "a = 1\n"); err != nil {
+		t.Fatalf("insert code at end after first insert: %v", err)
+	}
+
+	if got, want := len(nb.Cells), 2; got != want {
+		t.Fatalf("cells length after inserts: got %d want %d", got, want)
+	}
+}
+
+func TestInsertIntoEmptyNotebookInvalidIndex(t *testing.T) {
+	t.Parallel()
+
+	nb := &Notebook{Cells: []Cell{}}
+
+	err := InsertMarkdownCell(nb, 1, "# Intro\n")
 	if err == nil {
 		t.Fatalf("expected out-of-range error")
 	}

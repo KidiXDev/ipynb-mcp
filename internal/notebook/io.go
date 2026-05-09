@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+type InitialCell struct {
+	CellType string
+	Source   string
+}
+
 func ReadNotebook(path string) (*Notebook, error) {
 	if err := ValidateNotebookPath(path); err != nil {
 		return nil, err
@@ -34,7 +39,11 @@ func ReadNotebook(path string) (*Notebook, error) {
 	return &nb, nil
 }
 
-func CreateNotebook(path string, title string) (*Notebook, error) {
+func CreateNotebook(path string) (*Notebook, error) {
+	return CreateNotebookWithCells(path, nil)
+}
+
+func CreateNotebookWithCells(path string, initialCells []InitialCell) (*Notebook, error) {
 	if err := ValidateNotebookPath(path); err != nil {
 		return nil, err
 	}
@@ -56,8 +65,15 @@ func CreateNotebook(path string, title string) (*Notebook, error) {
 		NBFormatMinor: 5,
 	}
 
-	if strings.TrimSpace(title) != "" {
-		nb.Cells = append(nb.Cells, NewMarkdownCell("# "+title, nil))
+	for i, cell := range initialCells {
+		switch cell.CellType {
+		case CellTypeMarkdown:
+			nb.Cells = append(nb.Cells, NewMarkdownCell(cell.Source, nil))
+		case CellTypeCode:
+			nb.Cells = append(nb.Cells, NewCodeCell(cell.Source, nil))
+		default:
+			return nil, fmt.Errorf("initial cell %d has unsupported cell_type %q", i, cell.CellType)
+		}
 	}
 
 	if err := WriteNotebook(path, nb); err != nil {

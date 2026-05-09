@@ -11,10 +11,12 @@ import (
 func RegisterUpdateMarkdownCell(s *server.MCPServer) {
 	tool := mcp.NewTool(
 		"update_markdown_cell",
-		mcp.WithDescription("Replace an existing cell with a markdown cell at a given index."),
+		mcp.WithDescription("Replace one or more existing cells with markdown cells at given indices."),
 		mcp.WithString("path", mcp.Required(), mcp.Description("Path to the .ipynb file.")),
-		mcp.WithNumber("index", mcp.Required(), mcp.Description("Cell index to replace.")),
-		mcp.WithString("source", mcp.Required(), mcp.Description("New markdown source.")),
+		mcp.WithNumber("index", mcp.Description("Cell index to replace (single update mode).")),
+		mcp.WithString("source", mcp.Description("New markdown source (single update mode).")),
+		mcp.WithArray("indices", mcp.Description("Cell indices to replace (batch mode)."), mcp.WithNumberItems()),
+		mcp.WithArray("sources", mcp.Description("New markdown sources matching the indices order (batch mode)."), mcp.WithStringItems()),
 	)
 
 	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -22,17 +24,18 @@ func RegisterUpdateMarkdownCell(s *server.MCPServer) {
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		index, err := req.RequireInt("index")
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		source, err := req.RequireString("source")
+		indices, sources, err := parseUpdateCellsArgs(req)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 
 		return withNotebookMutation(path, func(nb *notebook.Notebook) error {
-			return notebook.UpdateMarkdownCell(nb, index, source)
+			for i := range indices {
+				if err := notebook.UpdateMarkdownCell(nb, indices[i], sources[i]); err != nil {
+					return err
+				}
+			}
+			return nil
 		})
 	})
 }
