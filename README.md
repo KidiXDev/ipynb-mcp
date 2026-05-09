@@ -9,9 +9,9 @@ The server exposes notebook operations without returning raw notebook JSON to th
 - Read notebook as human-readable preview (`read_notebook`)
 - Token-efficient output previews with truncation controls
 - Chunked output retrieval for large code outputs (`read_cell_output`)
-- Create notebook with nbformat `4.5` (`create_notebook`)
-- Insert/update markdown and code cells with explicit tools
-- Delete cells by index
+- Create notebook with nbformat `4.5` and caller-provided initial cells (`create_notebook`)
+- Insert/update markdown and code cells with explicit tools (single or batch mode)
+- Delete cells by index (single or batch mode)
 - Index and extension validation with clear errors
 - Safe file writes (temp file + replace)
 - Preserves notebook-level metadata and unrelated cell fields where possible
@@ -27,13 +27,18 @@ The server exposes notebook operations without returning raw notebook JSON to th
 7. `delete_cell`
 8. `read_cell_output`
 
+## Tool Input Notes
+
+- `create_notebook`: accepts `path` and optional `cells`; does not support `title`.
+- `insert_markdown_cell` / `insert_code_cell`: single mode (`index`, `source`) or batch mode (`indices`, `sources`).
+- `update_markdown_cell` / `update_code_cell`: single mode (`index`, `source`) or batch mode (`indices`, `sources`).
+- `delete_cell`: single mode (`index`) or batch mode (`indices`).
+
 ## Run
 
 ```bash
 go run .
 ```
-
-The server uses stdio transport.
 
 ## Install
 
@@ -51,9 +56,7 @@ Prebuilt binaries are also published in GitHub Releases for:
 - Linux (`amd64`, `arm64`)
 - macOS / Darwin (`amd64`, `arm64`)
 
-See full per-client setup:
-
-- `docs/AI_TOOLS_SETUP.md`
+See full per-client setup in [AI_TOOLS_SETUP.md](docs/AI_TOOLS_SETUP.md).
 
 ## Example MCP Config (Local)
 
@@ -69,7 +72,7 @@ See full per-client setup:
 }
 ```
 
-You can also use a built binary:
+You can also use a built [binary](https://github.com/KidiXDev/ipynb-mcp/releases):
 
 ```json
 {
