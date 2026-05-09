@@ -89,3 +89,7 @@ You can also use a built [binary](https://github.com/KidiXDev/ipynb-mcp/releases
 ```bash
 go test ./...
 ```
+
+## License
+
+MIT
