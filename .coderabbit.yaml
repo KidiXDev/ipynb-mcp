@@ -4,7 +4,7 @@ reviews:
   changed_files_summary: false
   sequence_diagrams: false
   estimate_code_review_effort: false
-  suggested_labels: false
+  suggested_labels: true
   auto_apply_labels: true
   poem: false
   finishing_touches:
