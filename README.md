@@ -29,7 +29,7 @@ The server exposes notebook operations without returning raw notebook JSON to th
 
 ## Tool Input Notes
 
-- `create_notebook`: accepts `path` and optional `cells`; does not support `title`.
+- `create_notebook`: accepts `path` and optional `cells`.
 - `insert_markdown_cell` / `insert_code_cell`: single mode (`index`, `source`) or batch mode (`indices`, `sources`).
 - `update_markdown_cell` / `update_code_cell`: single mode (`index`, `source`) or batch mode (`indices`, `sources`).
 - `delete_cell`: single mode (`index`) or batch mode (`indices`).
@@ -56,7 +56,7 @@ Prebuilt binaries are also published in GitHub Releases for:
 - Linux (`amd64`, `arm64`)
 - macOS / Darwin (`amd64`, `arm64`)
 
-See full per-client setup in [AI_TOOLS_SETUP.md](docs/AI_TOOLS_SETUP.md).
+See full per-client setup in [DOCS](docs/AI_TOOLS_SETUP.md).
 
 ## Example MCP Config (Local)
 
