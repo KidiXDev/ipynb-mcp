@@ -153,7 +153,7 @@ From the Agent pane:
 }
 ```
 
-### Github Copilot
+### GitHub Copilot
 
 Workspace-level `.vscode/mcp.json`:
 
