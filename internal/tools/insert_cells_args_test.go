@@ -46,10 +46,10 @@ func TestParseInsertCellsArgsBatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseInsertCellsArgs returned error: %v", err)
 	}
-	if len(indices) != 2 || indices[0] != 0 || indices[1] != 2 {
+	if len(indices) != 2 || indices[0] != 2 || indices[1] != 0 {
 		t.Fatalf("unexpected indices: %#v", indices)
 	}
-	if len(sources) != 2 || sources[0] != "# A\n" || sources[1] != "# B\n" {
+	if len(sources) != 2 || sources[0] != "# B\n" || sources[1] != "# A\n" {
 		t.Fatalf("unexpected sources: %#v", sources)
 	}
 }
@@ -87,5 +87,39 @@ func TestParseInsertCellsArgsBatchEmpty(t *testing.T) {
 	_, _, err := parseInsertCellsArgs(req)
 	if err == nil {
 		t.Fatalf("expected an error for empty indices")
+	}
+}
+
+func TestParseInsertCellsArgsOnlyIndices(t *testing.T) {
+	t.Parallel()
+
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"indices": []any{0.0, 1.0},
+			},
+		},
+	}
+
+	_, _, err := parseInsertCellsArgs(req)
+	if err == nil {
+		t.Fatalf("expected an error when only indices are provided")
+	}
+}
+
+func TestParseInsertCellsArgsOnlySources(t *testing.T) {
+	t.Parallel()
+
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"sources": []any{"# A\n", "# B\n"},
+			},
+		},
+	}
+
+	_, _, err := parseInsertCellsArgs(req)
+	if err == nil {
+		t.Fatalf("expected an error when only sources are provided")
 	}
 }

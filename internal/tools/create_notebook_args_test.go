@@ -53,6 +53,33 @@ func TestParseCreateNotebookInitialCellsValid(t *testing.T) {
 	}
 }
 
+func TestParseCreateNotebookInitialCellsNormalized(t *testing.T) {
+	t.Parallel()
+
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"path": "x.ipynb",
+				"cells": []any{
+					map[string]any{"cell_type": " Markdown ", "source": "# Intro\n"},
+					map[string]any{"cell_type": " CODE ", "source": "a = 1\n"},
+				},
+			},
+		},
+	}
+
+	cells, err := parseCreateNotebookInitialCells(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cells) != 2 {
+		t.Fatalf("expected 2 cells, got %d", len(cells))
+	}
+	if cells[0].CellType != "markdown" || cells[1].CellType != "code" {
+		t.Fatalf("unexpected normalized cell types: %#v", cells)
+	}
+}
+
 func TestParseCreateNotebookInitialCellsInvalidType(t *testing.T) {
 	t.Parallel()
 

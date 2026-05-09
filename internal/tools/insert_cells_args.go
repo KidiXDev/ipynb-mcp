@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -26,6 +27,26 @@ func parseInsertCellsArgs(req mcp.CallToolRequest) ([]int, []string, error) {
 		if len(indices) != len(sources) {
 			return nil, nil, fmt.Errorf("indices and sources must have the same length")
 		}
+
+		type insertPair struct {
+			index  int
+			source string
+		}
+
+		pairs := make([]insertPair, len(indices))
+		for i := range indices {
+			pairs[i] = insertPair{index: indices[i], source: sources[i]}
+		}
+
+		sort.SliceStable(pairs, func(i, j int) bool {
+			return pairs[i].index > pairs[j].index
+		})
+
+		for i := range pairs {
+			indices[i] = pairs[i].index
+			sources[i] = pairs[i].source
+		}
+
 		return indices, sources, nil
 	}
 

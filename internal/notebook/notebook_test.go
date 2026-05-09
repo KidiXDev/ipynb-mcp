@@ -91,11 +91,12 @@ func TestCreateNotebookWithInitialCells(t *testing.T) {
 
 	dir := t.TempDir()
 	path := filepath.Join(dir, "new", "with-cells.ipynb")
-
-	nb, err := CreateNotebookWithCells(path, []InitialCell{
+	initialCells := []InitialCell{
 		{CellType: CellTypeMarkdown, Source: "## Section\n"},
 		{CellType: CellTypeCode, Source: "x = 1\n"},
-	})
+	}
+
+	nb, err := CreateNotebookWithCells(path, initialCells)
 	if err != nil {
 		t.Fatalf("create notebook: %v", err)
 	}
@@ -108,6 +109,22 @@ func TestCreateNotebookWithInitialCells(t *testing.T) {
 	}
 	if got, want := nb.Cells[1].CellType, CellTypeCode; got != want {
 		t.Fatalf("second cell type: got %q want %q", got, want)
+	}
+
+	reloaded, err := ReadNotebook(path)
+	if err != nil {
+		t.Fatalf("reload notebook: %v", err)
+	}
+	if got, want := len(reloaded.Cells), len(initialCells); got != want {
+		t.Fatalf("reloaded cells length: got %d want %d", got, want)
+	}
+	for i := range initialCells {
+		if got, want := reloaded.Cells[i].CellType, initialCells[i].CellType; got != want {
+			t.Fatalf("reloaded cell %d type: got %q want %q", i, got, want)
+		}
+		if got, want := reloaded.Cells[i].Source.String(), initialCells[i].Source; got != want {
+			t.Fatalf("reloaded cell %d source: got %q want %q", i, got, want)
+		}
 	}
 }
 
